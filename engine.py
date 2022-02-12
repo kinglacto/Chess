@@ -6,6 +6,8 @@ Author - kinglacto [@Novice]
 This is a base chess engine that takes (a) a board_state, (b) a turn value and also (c) a list of logged moves up until now; as inputs.
 If no board state is passed, the base engine assumes the start_state input with white to move and a clean moves_log.
 
+# The word "move" henceforth refers to a "ply".
+
 Functions:
 1. It can make moves. The function for that is instance_name.make_move(s, e , pm);
 where s is the start cord (x, y) and e is the end cord (x, y) and pm is the promotion piece, 
@@ -89,6 +91,21 @@ Class Methods:
         - returns a list of all possible legal moves
 
 }
+
+~ make_move(start_cord, end_cord, promotion_piece){
+        parameters:
+            1) start_cord {
+                Type: iterable object of length 2
+                Values: the co-ordinate of the piece to be moved
+            }
+
+            2) end_cord {
+                Type: iterable object of length 2
+                Values: the co-ordinate the piece is to be moved to
+            }
+
+        - returns True if move is a promotion move else False
+    }
 
 ~ is_draw() {
         parameters:
@@ -544,6 +561,13 @@ class Engine():
         if self.cannot_move(self.turn) and not self.in_check(self.turn): 
             return True
 
+    # Checks if for the start_cord and end_cord, the move is a promotion move.
+    def is_promotion_move(self, start_cord, end_cord):
+        if ((self.board[start_cord[0]][start_cord[1]] == 6 and end_cord[0] == 0 and end_cord in self.piece_function_key[6](start_cord)) or 
+            (self.board[start_cord[0]][start_cord[1]] == -6 and end_cord[0] == 7 and end_cord in self.piece_function_key[-6](start_cord))):
+            return True
+        return False
+
     # Move maker function that takes start cord , end cord and possible pawn promotion piece.
     # If pm is not specified, the piece promoted will automatically be the queen.
     # It makes the move and returns True if the move making was a success, however if the move could not be made,
@@ -578,8 +602,7 @@ class Engine():
                 piece_captured = self.board[x2][y2]
 
                 # If promotion is possible , flag True.
-                if ((self.board[start_cord[0]][start_cord[1]] == 6 and end_cord[0] == 0 and end_cord in self.piece_function_key[6](start_cord)) or 
-                    (self.board[start_cord[0]][start_cord[1]] == -6 and end_cord[0] == 7 and end_cord in self.piece_function_key[-6](start_cord))):
+                if self.is_promotion_move(start_cord, end_cord):
                     is_promotion = True
 
                 # Checks if en-passant is possible AND is the chosen move.

@@ -48,6 +48,7 @@ class Chess():
                                 6: WHITE_PAWN_IMG, -6: BLACK_PAWN_IMG}
 
         self.buttons_rect_key = {"reset": pygame.Rect(401, 350, 107, 48), "undo": pygame.Rect(400, 300, 112, 52), "new_game": pygame.Rect(400, 52, 108, 54)}
+        self.promotion_piece_rects = [pygame.Rect(420, 100 + i*50, 50, 50) for i in range(4)]
 
         self.squares_centers_list = [[((48 * j) + 13 + 24, (48 * i) + 3 + 24) for j in range(8)] for i in range(8)]
         self.squares_list = [[pygame.Rect((48 * j) + 13, (48 * i) + 3, 48, 48) for j in range(8)] for i in range(8)]
@@ -92,7 +93,6 @@ class Chess():
                     if self.buttons_rect_key["reset"].collidepoint((x, y)) or self.buttons_rect_key["new_game"].collidepoint((x, y)):
                         return True
 
-                    # If user undoes move, move is undoed, returns False.
                     elif self.buttons_rect_key["undo"].collidepoint((x, y)):
                         engine.undo_move()
                         self.update_board()
@@ -102,12 +102,8 @@ class Chess():
             pygame.time.wait(30)
 
     def ask_for_promotion(self) -> int:
-        if engine.turn == 1:
-            for i in range(4):
-                self.screen.blit(self.piece_image_key[i + 1], (420, 100 + i*50))
-        else:
-            for i in range(4):
-                self.screen.blit(self.piece_image_key[-(i + 1)], (420, 100 + i*50))
+        for i in range(4):
+            self.screen.blit(self.piece_image_key[engine.turn * (i + 1)], (420, 100 + i*50))
                 
         pygame.display.update()
         
@@ -119,15 +115,9 @@ class Chess():
                     sys.exit()
 
                 if event.type == pygame.MOUSEBUTTONUP:
-                    x, y = event.pos
-                    
-                    if 420 <= x <= 470 and 100 <= y <= 300:
-                        promotion_piece = ((y - 100) // 50) + 1
-
-                        if engine.turn == -1:
-                            promotion_piece *= -1
-
-                        return promotion_piece
+                    for i in range(4):
+                        if self.promotion_piece_rects[i].collidepoint(event.pos):
+                            return engine.turn * (i + 1)
   
             pygame.time.wait(30)
         
@@ -146,7 +136,6 @@ class Chess():
                     x, y = event.pos
 
                     if self.start_cord == None:
-                        # Handles undo and reset.
                         if self.buttons_rect_key["reset"].collidepoint((x, y)):
                             engine.reset()
                             self.update_board()
@@ -173,8 +162,7 @@ class Chess():
                                 if self.squares_list[m][n].collidepoint((x, y)):
                                     self.end_cord = (m, n)
 
-                                    if ((engine.board[self.start_cord[0]][self.start_cord[1]] == 6 and self.end_cord[0] == 0 and self.end_cord in engine.piece_function_key[6](self.start_cord))
-                                        or (engine.board[self.start_cord[0]][self.start_cord[1]] == -6 and self.end_cord[0] == 7 and self.end_cord in engine.piece_function_key[-6](self.start_cord))):
+                                    if engine.is_promotion_move(self.start_cord, self.end_cord):
                                         self.promotion_piece = self.ask_for_promotion()
 
                                     engine.make_move(self.start_cord, self.end_cord, self.promotion_piece)
@@ -183,7 +171,8 @@ class Chess():
                                     self.promotion_piece = None
                                     
                                     is_over = False
-                                    if engine.is_checkmate() in (1, -1):
+                                    winner = engine.is_checkmate()
+                                    if winner in (1, -1):
                                         n = 1 if engine.turn == -1 else 2
                                         self.screen.blit(self.end_message_key[n], (400, 0))
                                         is_over = True
