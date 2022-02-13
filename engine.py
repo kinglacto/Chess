@@ -1,5 +1,5 @@
 """
-Author - kinglacto [@Novice]
+Author - @kinglacto
 
 #NOTE: This base engine has not been optimised for developing an AI.
 
@@ -17,7 +17,7 @@ which you need not always input unless the move you are making is a promotion mo
 which undoes the most recent move.
 
 
-(a) The board_state is an 8 x 8 nested list where
+(a) The board_state is an 8 x 8 list where
 {
      1: white rook   
      2: white knight  
@@ -41,7 +41,7 @@ which undoes the most recent move.
 -1: black's turn
 
 (c) for list moves:
-[(p1,s1,o1,e1,add_on1), (p2,s2,o2,e2,add_on2) ... (pN,sN,oN,eN,add_onN)] where N is the number of plies or N/2 is the number of moves played.
+[(p1,s1,o1,e1,add_on1), (p2,s2,o2,e2,add_on2) ... (pN,sN,oN,eN,add_onN)] where N is the number of plies (literally) or N/2 is the number of moves (literally) played.
 where {
     p is the piece that was moved 
     s is the cord from which it was moved [a tuple of the form (x, y)]
@@ -60,107 +60,6 @@ add_on contains additional information and not every element (tuple) in moves ha
     16: black king-side castle
     17: black queen-side castle
 }
-
-
-Class Methods:
-~ reset() {
-    parameters:
-        None
-
-    - resets the board
-    - returns None
-    }
-
-~ in_check(color) {
-        parameters:
-            1) color {
-                Type: int
-                Values: 1 (white) or -1 (black)
-            }
-
-        - returns True or False if the color (c) is under check; Else None for invalid input
-    }
-
-~ get_all_legal_moves(start_cord){
-    parameters:
-            1) start_cord {
-                Type: iterable object of length 2
-                Values: the co-ordinate of the piece to be moved
-            }
-
-        - returns a list of all possible legal moves
-
-}
-
-~ make_move(start_cord, end_cord, promotion_piece){
-        parameters:
-            1) start_cord {
-                Type: iterable object of length 2
-                Values: the co-ordinate of the piece to be moved
-            }
-
-            2) end_cord {
-                Type: iterable object of length 2
-                Values: the co-ordinate the piece is to be moved to
-            }
-
-        - returns True if move is a promotion move else False
-    }
-
-~ is_draw() {
-        parameters:
-            None
-
-        - returns True if game state is a draw; else False
-    }
-
-
-~ is_stalemate() {
-        parameters:
-            None
-
-        - returns True if game state is a stalemate; else False   
-    }
-
-
-~ is_checkmate() {
-        paramters:
-            None
-
-        - returns 1 if white has won; -1 if black has won; else None
-    }
-
-
-~ make_move(start_cord, end_cord, promotion_piece){
-        parameters:
-            1) start_cord {
-                Type: iterable object of length 2
-                Values: the co-ordinate of the piece to be moved
-            }
-
-            2) end_cord {
-                Type: iterable object of length 2
-                Values: the co-ordinate the piece is to be moved to
-            }
-
-            3) +[OPTIONAL] promotion_piece {
-                Type: int 
-                Values: piece_code of the piece, the pawn is to be promoted to IF the move 
-                        is a promotion move. Set to Queen (4, -4) by deafult.
-            }
-
-        - returns True if move was successfully made else False if the move was an illegal move,
-                  and thus a failed attempt.
-    }
-
-
-~ undo_move(){
-        parameters:
-                None
-
-        - returns True if the latest move was undone else False if no move was made before call. 
-
-    }
 """
 
 
@@ -195,6 +94,16 @@ class Engine():
 
     # This function resets the board and empties the move log while setting the turn to 1 (white's turn).
     def reset(self) -> None:
+        """
+        - resets the board, player_turn and move log
+
+        parameters:
+            None
+
+        returns:
+            None
+        """
+
         self.turn = 1 
         self.moves = []
         
@@ -442,6 +351,16 @@ class Engine():
     # checks if the king of color is in check;
     # c can be 1 (for white) or -1 (for black).
     def in_check(self, color) -> bool:
+        """
+        parameters:
+            color:
+                Type: int
+                Values: 1 (white) or -1 (black)
+
+        returns:
+            True or False if the color (c) is under check; else None for invalid input
+        """
+
         if color == 1:
             enemy_pieces = self.black_pieces
         elif color == -1:
@@ -482,6 +401,16 @@ class Engine():
 
     # Generates all legal moves for a particular start cord
     def get_all_legal_moves(self, start_cord) -> list:
+        """
+        parameters:
+            start_cord:
+                Type: iterable object of length 2
+                Values: the co-ordinate of the piece to be moved
+
+        returns:
+            A list of all possible legal moves
+        """
+
         x, y = start_cord
         color = 1 if self.board[x][y] > 0 else -1
         all_legal_moves = []
@@ -518,6 +447,14 @@ class Engine():
 
     # Checks if the board state is a draw.
     def is_draw(self) -> bool:
+        """
+        parameters:
+            None
+
+        returns:
+            True if game state is a draw; else False
+        """
+
         # If the previous 3 moves were the same, yes.
         if len(self.moves) >= 9 and self.moves[-1] == self.moves[-5] == self.moves[-9]: 
             return True
@@ -553,11 +490,27 @@ class Engine():
 
     # If a color cannot move and it is in check, checkmate.
     def is_checkmate(self) -> bool:
+        """
+        paramters:
+            None
+            
+        returns:
+            1 if white has been check-mated; -1 if black has been check-mated; else None
+        """
+
         if self.cannot_move(self.turn) and self.in_check(self.turn): 
             return self.turn
     
     # If a color cannot move, but it is NOT in check, stalemate.
     def is_stalemate(self) -> bool:
+        """
+        parameters:
+            None
+            
+        returns:
+            True if game state is a stalemate; else False
+        """
+
         if self.cannot_move(self.turn) and not self.in_check(self.turn): 
             return True
 
@@ -573,6 +526,24 @@ class Engine():
     # It makes the move and returns True if the move making was a success, however if the move could not be made,
     # the self.board list remains unchanged but False is returned, indicating failure.
     def make_move(self, start_cord, end_cord, promotion_piece=None) -> bool:
+        """
+        parameters:
+            start_cord:
+                Type: iterable object of length 2
+                Values: the co-ordinate of the piece to be moved
+
+            end_cord:
+                Type: iterable object of length 2
+                Values: the co-ordinate the piece is to be moved to
+
+            promotion_piece [OPTIONAL]:
+                Type: int 
+                Values: piece_code of the piece, the pawn is to be promoted to IF the move is a promotion move. Set to Queen (4, -4) by deafult.
+
+        returns:
+            True if move was successfully made else False if the move was an illegal move, and thus a failed attempt.
+        """
+
         x1 = start_cord[0]
         y1 = start_cord[1]
 
@@ -675,6 +646,14 @@ class Engine():
 
     # Function that undoes the most recent move. 
     def undo_move(self) -> bool:
+        """
+        parameters:
+            None
+            
+        returns:
+            True if the latest move was undone else False if no move was made before call.
+        """
+
         if len(self.moves) > 0:
             # Simple switch.
             previous_move = self.moves[-1]
