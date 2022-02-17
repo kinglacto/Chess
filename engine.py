@@ -1,19 +1,17 @@
 """
 Author - @kinglacto
 
-#NOTE: This base engine has not been optimised for developing an AI.
-
 This is a base chess engine that takes (a) a board_state, (b) a turn value and also (c) a list of logged moves up until now; as inputs.
-If no board state is passed, the base engine assumes the start_state input with white to move and a clean moves_log.
+If no board state is passed, the base engine assumes the start_state input with white to move and an empty moves_log.
 
 # The word "move" henceforth refers to a "ply".
 
 Functions:
-1. It can make moves. The function for that is instance_name.make_move(s, e , pm);
-where s is the start cord (x, y) and e is the end cord (x, y) and pm is the promotion piece, 
-which you need not always input unless the move you are making is a promotion move.
+1. It can make moves. The method is instance_name.make_move(start_cord, end_cord , promotion_piece);
+where start_cord is the start cord (x, y) and end_cord is the end cord (x, y) and promotion_piece is the promotion piece, 
+which you need not always pass in unless the move you are making is a promotion move.
 
-2. It can undo moves. The function for that is instance_name.undo_move();
+2. It can undo moves. The method is instance_name.undo_move();
 which undoes the most recent move.
 
 
@@ -66,7 +64,7 @@ add_on contains additional information and not every element (tuple) in moves ha
 class Engine():
     def __init__(self, board=None, turn=1, moves=[]) -> None:
 
-        # Three lists of offsets - horizontally, diagonally and the third one is for the knight's movement.
+        # Three lists of offsets - horizontal, diagonal and the third one is for the knight's movement.
         self.horizontal_offsets = ((1, 0), (-1, 0), (0, -1), (0, 1))
         self.diagonal_offsets = ((1, 1), (1, -1), (-1, 1), (-1, -1))
         self.knight_offsets = ((1, 2), (-1, 2), (1, -2), (-1, -2), (2, 1), (-2, 1), (2, -1), (-2, -1))
@@ -131,7 +129,7 @@ class Engine():
             self.board[1][i] = self.pieces[5]
             self.board[6][i] = self.pieces[11]
 
-    # This function takes a cord as input and adds an offset to it with a multiple - number_of_squares.
+    # This function takes a cord as input and adds an offset to it with a multiple, i.e the number_of_squares.
     def offset(self, cord, offset, number_of_squares) -> list:
         return [cord[0] + offset[0] * number_of_squares, cord[1] + offset[1] * number_of_squares]
 
@@ -144,9 +142,9 @@ class Engine():
 
         # 4 offsets - 4 directions, i.e top, down, left and right.
         for direction_index in range(4):
-            # Max of 8 squares and 1 square for rook and king respectively.
+            # Max of 8 squares for rook and 1 square for king.
             for n in range(1, max_squares):
-                # adds the offset and checks end_cord in self.board
+                # adds the offset
                 m, n = self.offset(start_cord, self.horizontal_offsets[direction_index], n)
 
                 # If the end_cord is in enemy_pieces then it is a valid_cord but the search must stop.
@@ -158,7 +156,7 @@ class Engine():
                 elif 0 <= m <= 7 and 0 <= n <= 7 and self.board[m][n] == 0:
                     possible_end_cords.append((m, n))
 
-                # If neither, it is either an invalid cord on an 8 x 8 board or it is occupied by same color piece (also invalid); nevertheless, search must stop.
+                # If neither, it is either an invalid cord on an 8 x 8 board or it is occupied by a same color piece (also invalid); nevertheless, search must stop.
                 else:
                     break
 
@@ -166,7 +164,7 @@ class Engine():
 
     # Generates all the possible cords that the bishop can move to from the start cord (which is a tuple of the form (x, y)).
     # This includes illegal squares as well.
-    # Same logic as above but with a different set of offsets.
+    # Same logic as above but with a different offsets.
     def bishop_cords(self, start_cord) -> list:
         possible_end_cords = []
         enemy_pieces = self.black_pieces if self.board[start_cord[0]][start_cord[1]] > 0 else self.white_pieces
@@ -200,7 +198,7 @@ class Engine():
             if len(self.moves) > 0: # If a previous move has been made.
                 previous_move = self.moves[-1] # The previous move
 
-                # If right square square is occupied by black pawn AND if start_cord of prev move is of form (1, y + 1), i.e from 7th rank 
+                # If right square is occupied by black pawn AND if start_cord of prev move is of form (1, y + 1), i.e from 7th rank 
                 # AND if the destination was DIRECTLY to the adjacent right cord (on 5th rank),
                 # then en-passant is possible.
                 if x > 0 and y < 7 and self.board[x][y + 1] == -6 and previous_move[0] == -6 and previous_move[1] == (1, y + 1) and previous_move[3] == (3, y + 1): 
@@ -210,7 +208,7 @@ class Engine():
                 if x > 0 and y > 0 and self.board[x][y - 1] == -6 and previous_move[0] == -6 and previous_move[1] == (1, y - 1) and previous_move[3] == (3, y - 1): 
                     possible_end_cords.append((x - 1, y - 1))
 
-            # Diagonal movement (diagonal_offsets [3] and [4] for top-right and top-left) with m const and equal to 1.
+            # Diagonal movement (diagonal_offsets [3] and [4] for top-right and top-left) with offset multiplier equal to 1.
             for direction_index in range(2, 4):
                 m, n = self.offset(start_cord, self.diagonal_offsets[direction_index], 1)
                 # Only if the diagonal square is occupied by enemy piece, is the square valid.
@@ -266,7 +264,7 @@ class Engine():
         return list(self.bishop_cords(start_cord) + self.rook_cords(start_cord))
 
     # Generates all possible cords that the king can move to from a start cord - s (which is a tuple of the form (x, y)).
-    # Simply add rook and bishop cords from that square, but with m const and equal to 1.
+    # Simply add rook and bishop cords from that square, but with offset multiplier equal to 1.
     # Also checks for castling moves.
     # This includes illegal squares as well.
     def king_cords(self, start_cord) -> list:
@@ -274,7 +272,7 @@ class Engine():
 
         # If start cord of king is where it is at the start of the game AND
         # the king on that square has not been moved AND
-        # the rook to the right at the last cord of the list has not been moved AND
+        # the rook to the right at the end, that is, has not been moved AND
         # all squares in between are empty AND
         # the king is NOT in check.
         if start_cord == (7, 4) and not self.moved(5, (7, 4)) and not self.moved(1, (7, 7)) and self.board[7][5:7] == [0, 0] and not self.in_check(1):
@@ -349,7 +347,7 @@ class Engine():
         return False
 
     # checks if the king of color is in check;
-    # c can be 1 (for white) or -1 (for black).
+    # color is 1 (for white) or -1 (for black).
     def in_check(self, color) -> bool:
         """
         parameters:
@@ -378,8 +376,7 @@ class Engine():
                     king_cord = (i, j)
                     break
 
-        # For every piece on the board, if it is occpied by an enemy piece and its end_cords include the cord t (which is the location of the king
-        # that we calculated before), then the king is under check.       
+        # For every piece on the board, if it is occpied by an enemy piece and its end_cords include the king_cord, then the king is under check.       
         for m in range(8):
             for n in range(8):
                 if self.board[m][n] in enemy_pieces and king_cord in self.piece_function_key[self.board[m][n]]((m, n)):
@@ -419,7 +416,7 @@ class Engine():
         if self.board[x][y] == 0:
             return all_legal_moves
   
-        # List of possible end cords.
+        # List of possible end cords (including illegal moves).
         all_possible_end_cords = self.piece_function_key[self.board[x][y]]((x, y))
 
         # If all_possible_end_cords is not empty.
@@ -478,7 +475,7 @@ class Engine():
         white_pieces = sorted(white_pieces)
         black_pieces = sorted(black_pieces)
         
-        # If certain piece combinations are observed, yes:
+        # If certain piece combinations are observed on the board, yes:
         # evident below.
         if white_pieces in ([5], [3, 5], [2, 5]) and black_pieces in ([-5], [-5, -3], [-5, -2]): 
             return True
@@ -521,10 +518,10 @@ class Engine():
             return True
         return False
 
-    # Move maker function that takes start cord , end cord and possible pawn promotion piece.
-    # If pm is not specified, the piece promoted will automatically be the queen.
+    # Move maker function that takes start cord , end cord and possibly a pawn promotion piece.
+    # If promotion_piece is not specified, the piece promoted will automatically be the queen of the player's color.
     # It makes the move and returns True if the move making was a success, however if the move could not be made,
-    # the self.board list remains unchanged but False is returned, indicating failure.
+    # self.board remains unchanged but False is returned, indicating failure.
     def make_move(self, start_cord, end_cord, promotion_piece=None) -> bool:
         """
         parameters:
@@ -554,7 +551,7 @@ class Engine():
         if (self.turn > 0 and self.board[x1][y1] > 0) or (self.turn < 0 and self.board[x1][y1] < 0):
             
             # If the end_cord is a possible cord (also possibly illegal).
-            if end_cord in self.piece_function_key[self.board[x1][y1]](start_cord):
+            if end_cord in self.get_all_legal_moves(start_cord):
 
                 # If promotion_piece not given, set to queen of the respective color.
                 if promotion_piece == None:
@@ -599,12 +596,6 @@ class Engine():
                 # Move has been made.
                 self.board[x1][y1] = 0
                 self.board[x2][y2] = piece_moved
-                
-                # After the move has been made, if color in check, reverse the move and return False.
-                if self.in_check(self.turn):
-                    self.board[x1][y1] = piece_moved
-                    self.board[x2][y2] = piece_captured
-                    return False
 
                 # Checks if the move is castling and sets the required add_on. 
                 if piece_moved == 5 and start_cord == (7, 4) and end_cord == (7, 6): 
@@ -662,7 +653,7 @@ class Engine():
             
             # If add_on detected...
             # pawns are added back in case of en-passant add-ons AND
-            # rooks are re-placed in case of castling add_ons.
+            # rooks are placed in their previous positions in case of castling add_ons.
             if len(previous_move) == 5:
                 if previous_move[4] == 10: 
                     self.board[previous_move[1][0]][previous_move[1][1] + 1] = -6
