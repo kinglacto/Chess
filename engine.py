@@ -359,6 +359,7 @@ class Engine():
             self.board[1][i] = self.pieces[5]
             self.board[6][i] = self.pieces[11]
 
+    # TODO: in_check() broken. fix it.
     def in_check(self, color) -> bool:
         """
         parameters:
@@ -366,13 +367,15 @@ class Engine():
 
         returns: True or False if the color is under check; else False
         """
-
+        print(f"checking if {color} is in check")
         if color == 1:
             enemy_pieces = self.black_pieces
         elif color == -1:
             enemy_pieces = self.white_pieces
         else:
             return None
+
+        king_cord = None
         
         # search for king
         for i in range(8):
@@ -383,13 +386,14 @@ class Engine():
                 elif self.board[i][j] == -5 and color == -1: 
                     king_cord = (i, j)
                     break
-
-        # For every piece on the board, if it is occupied by an enemy piece and its possible_end_cords includes the king_cord,
-        # then the king is under check.       
-        for m in range(8):
-            for n in range(8):
-                if self.board[m][n] in enemy_pieces and king_cord in self.get_all_legal_moves((m , n)):
-                    return True
+        
+        if king_cord is not None:
+            # For every piece on the board, if it is occupied by an enemy piece and its possible_end_cords includes the king_cord,
+            # then the king is under check.       
+            for m in range(8):
+                for n in range(8):
+                    if self.board[m][n] in enemy_pieces and king_cord in self.piece_function_key[self.board[m][n]]((m, n)):
+                        return True
         return False
 
     def get_all_legal_moves(self, start_cord) -> list:
