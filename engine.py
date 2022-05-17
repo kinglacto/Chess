@@ -667,4 +667,3 @@ class Engine():
 
             return True
         return False
-        
